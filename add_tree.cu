@@ -6,41 +6,41 @@ using namespace std;
 #define THREAD_NUM 16
 #define BLOCK_NUM 1
 
-// __global__ º¯Êı (GPUÉÏÖ´ĞĞ) ¼ÆËãÁ¢·½ºÍ
+// __global__ å‡½æ•° (GPUä¸Šæ‰§è¡Œ) è®¡ç®—ç«‹æ–¹å’Œ
 __global__ static void sumOfSquares(float *num, float* result,clock_t *time)
 {
 
-    //ÉùÃ÷Ò»¿é¹²ÏíÄÚ´æ
+    //å£°æ˜ä¸€å—å…±äº«å†…å­˜
     extern __shared__ int shared[];
 
-    //±íÊ¾Ä¿Ç°µÄ thread ÊÇµÚ¼¸¸ö thread£¨ÓÉ 0 ¿ªÊ¼¼ÆËã£©
+    //è¡¨ç¤ºç›®å‰çš„ thread æ˜¯ç¬¬å‡ ä¸ª threadï¼ˆç”± 0 å¼€å§‹è®¡ç®—ï¼‰
     const int tid = threadIdx.x;
 
-    //±íÊ¾Ä¿Ç°µÄ thread ÊôÓÚµÚ¼¸¸ö block£¨ÓÉ 0 ¿ªÊ¼¼ÆËã£©
+    //è¡¨ç¤ºç›®å‰çš„ thread å±äºç¬¬å‡ ä¸ª blockï¼ˆç”± 0 å¼€å§‹è®¡ç®—ï¼‰
     const int bid = blockIdx.x;
 
     shared[tid] = 0;
 
     int i;
-    //¼ÇÂ¼ÔËËã¿ªÊ¼µÄÊ±¼ä
+    //è®°å½•è¿ç®—å¼€å§‹çš„æ—¶é—´
     clock_t start;
-    //Ö»ÔÚ thread 0£¨¼´ threadIdx.x = 0 µÄÊ±ºò£©½øĞĞ¼ÇÂ¼£¬Ã¿¸ö block ¶¼»á¼ÇÂ¼¿ªÊ¼Ê±¼ä¼°½áÊøÊ±¼ä
+    //åªåœ¨ thread 0ï¼ˆå³ threadIdx.x = 0 çš„æ—¶å€™ï¼‰è¿›è¡Œè®°å½•ï¼Œæ¯ä¸ª block éƒ½ä¼šè®°å½•å¼€å§‹æ—¶é—´åŠç»“æŸæ—¶é—´
     if (tid == 0) time[bid] = clock();
 
-    //threadĞèÒªÍ¬Ê±Í¨¹ıtidºÍbidÀ´È·¶¨£¬Í¬Ê±²»ÒªÍü¼Ç±£Ö¤ÄÚ´æÁ¬ĞøĞÔ
+    //threadéœ€è¦åŒæ—¶é€šè¿‡tidå’Œbidæ¥ç¡®å®šï¼ŒåŒæ—¶ä¸è¦å¿˜è®°ä¿è¯å†…å­˜è¿ç»­æ€§
     for (i = bid * THREAD_NUM + tid; i < N_size; i += THREAD_NUM*BLOCK_NUM) {
 
         shared[tid] += num[i] * num[i] * num[i];
 
     }
 
-    //Í¬²½ ±£Ö¤Ã¿¸ö thread ¶¼ÒÑ¾­°Ñ½á¹ûĞ´µ½ shared[tid] ÀïÃæ
+    //åŒæ­¥ ä¿è¯æ¯ä¸ª thread éƒ½å·²ç»æŠŠç»“æœå†™åˆ° shared[tid] é‡Œé¢
     __syncthreads();
 
-    //Ê÷×´¼Ó·¨
+    //æ ‘çŠ¶åŠ æ³•
     int offset = 1, mask = 1;
 
-    while (offset < 16)
+    while (offset < THREAD_NUM)
     {
         if ((tid & mask) == 0)
         {
@@ -53,7 +53,7 @@ __global__ static void sumOfSquares(float *num, float* result,clock_t *time)
 
     }
 
-    //¼ÆËãÊ±¼ä,¼ÇÂ¼½á¹û£¬Ö»ÔÚ thread 0£¨¼´ threadIdx.x = 0 µÄÊ±ºò£©½øĞĞ£¬Ã¿¸ö block ¶¼»á¼ÇÂ¼¿ªÊ¼Ê±¼ä¼°½áÊøÊ±¼ä
+    //è®¡ç®—æ—¶é—´,è®°å½•ç»“æœï¼Œåªåœ¨ thread 0ï¼ˆå³ threadIdx.x = 0 çš„æ—¶å€™ï¼‰è¿›è¡Œï¼Œæ¯ä¸ª block éƒ½ä¼šè®°å½•å¼€å§‹æ—¶é—´åŠç»“æŸæ—¶é—´
     if (tid == 0)
     { 
         result[bid] = shared[0];
@@ -62,7 +62,7 @@ __global__ static void sumOfSquares(float *num, float* result,clock_t *time)
 
 }
 
-__host__ //ÕâÀïÊÇÔÚ CPU ÉÏÔËĞĞµÄ´úÂë£¬ÓÃ __host__ À´Ö¸Ã÷
+__host__ //è¿™é‡Œæ˜¯åœ¨ CPU ä¸Šè¿è¡Œçš„ä»£ç ï¼Œç”¨ __host__ æ¥æŒ‡æ˜
 int main() {
 
 
@@ -76,33 +76,34 @@ int main() {
 
     float *d_A, *d_B, *d_C;
 	clock_t *time;
-    //ÔÚÏÔ¿¨ÉÏ·ÖÅäÄÚ´æ
+    //åœ¨æ˜¾å¡ä¸Šåˆ†é…å†…å­˜
     cudaMalloc((void**)&d_A, sizeof(float) * N_size);
     cudaMalloc((void**)&d_B, sizeof(float) * N_size);
     cudaMalloc((void**)&d_C, sizeof(float) * N_size);
 	cudaMalloc((void**)&time,sizeof(clock_t)*BLOCK_NUM*2);
-    //½«ÄÚ´æÖĞµÄÊı¾İ¿½±´µ½ÏÔ¿¨ÉÏ
+    //å°†å†…å­˜ä¸­çš„æ•°æ®æ‹·è´åˆ°æ˜¾å¡ä¸Š
     cudaMemcpy(d_A, h_A, sizeof(h_A), cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, h_B, sizeof(h_B), cudaMemcpyHostToDevice);
 
-    //ÕâÁ©²ÎÊıÓÃÀ´¾ö¶¨Ïß³ÌµÄ×éÖ¯·½Ê½£¬¿´ÏÂÎÄ
+    //è¿™ä¿©å‚æ•°ç”¨æ¥å†³å®šçº¿ç¨‹çš„ç»„ç»‡æ–¹å¼ï¼Œçœ‹ä¸‹æ–‡
     dim3 DimGrid(BLOCK_NUM, 1, 1);
     dim3 DimBlock(THREAD_NUM,1,1);
 
-    //ÔÚÏÔ¿¨ÉÏÖ´ĞĞ´úÂë
+    //åœ¨æ˜¾å¡ä¸Šæ‰§è¡Œä»£ç 
     //sumOfSquares <<<DimGrid, DimBlock >>>(d_A,d_C);
 	sumOfSquares <<<DimGrid,DimBlock,THREAD_NUM*sizeof(float)>>>(d_A,d_C,time);
 	
-    //½«ÔËËã½á¹û´ÓÏÔ¿¨¿½±´»ØÀ´
+    //å°†è¿ç®—ç»“æœä»æ˜¾å¡æ‹·è´å›æ¥
     cudaMemcpy(h_C, d_C, sizeof(h_C), cudaMemcpyDeviceToHost);
 	cudaMemcpy(time_used,time,sizeof(time),cudaMemcpyDeviceToHost);
-    for (int i = 0; i < N_size; i++) {
+    for (int i = 0; i < BLOCK_NUM; i++) {
         cout <<h_C[i]<<"ok"<<'\n';
     }
-	cout<<time_used[1]-time_used[0];
+	for (int i=0;i<BLOCK_NUM;i++){
+	cout<<time_used[i+BLOCK_NUM]-time_used[i]<<'\n';
+	}
 
-
-    //ÊÍ·ÅÏÔ´æ
+    //é‡Šæ”¾æ˜¾å­˜
     cudaFree(d_A);
     cudaFree(d_B);
     cudaFree(d_C);
